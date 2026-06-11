@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Opportunity Detector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body{
+      font-family:'Inter',sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(236,72,153,.16), transparent 28%),
+        radial-gradient(circle at bottom, rgba(16,185,129,.10), transparent 24%),
+        #050816;
+      color:#fff;
+    }
+    .glass{
+      background:rgba(255,255,255,.06);
+      backdrop-filter:blur(24px);
+      -webkit-backdrop-filter:blur(24px);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+    }
+    .grid-bg{
+      background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size:48px 48px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,.25));
+    }
+    .nav-btn.active{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.18)}
+    .personalize-active{background:rgba(59,130,246,.95);color:#fff;border-color:rgba(59,130,246,.95)}
+    .section{display:none}.section.active{display:block}
+    .card-hover{transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;cursor:pointer}
+    .card-hover:hover{transform:translateY(-4px);box-shadow:0 25px 65px rgba(0,0,0,.42);border-color:rgba(255,255,255,.18)}
+    .glow{box-shadow:0 0 30px rgba(99,102,241,.22),0 0 70px rgba(236,72,153,.12)}
+    .pulse-dot{animation:pulse 1.8s infinite}
+    /* Chat widget styles */
+    #chatWidget { right:1.5rem; bottom:1.5rem }
+    #chatWidget .glass { padding:0.5rem }
+    #chatHistory { max-height:280px; overflow-y:auto }
+    .chat-msg-user{background:rgba(255,255,255,.08);color:#fff;align-self:flex-end}
+    .chat-msg-bot{background:rgba(255,255,255,.04);color:#e6eef8;align-self:flex-start}
+    .toggle-chip{transition:all .2s ease;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.05);color:#f8fafc;padding:.75rem 1rem;font-size:.85rem;cursor:pointer;white-space:nowrap}
+    .toggle-chip.active{background:rgba(124,58,237,.22);border-color:rgba(139,92,246,.45);box-shadow:0 18px 35px rgba(124,58,237,.14);color:#fff}
+    input[type=range]{width:100%;accent-color:#818cf8;background:rgba(255,255,255,.08);border-radius:999px;outline:none;height:4px;margin-top:.5rem}
+    .modal{display:none}.modal.show{display:flex}
+    .scrollbar::-webkit-scrollbar{width:8px}
+    .scrollbar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:999px}
+    #chart{width:100%;height:460px}
+  </style>
+</head>
+<body>
+  <div class="min-h-screen relative overflow-x-hidden">
+    <div class="absolute inset-0 grid-bg opacity-35"></div>
+
+    <header class="relative z-10 max-w-7xl mx-auto px-6 py-5">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-indigo-500 flex items-center justify-center font-black text-lg glow">A</div>
+          <div>
+            <h1 class="text-xl font-extrabold tracking-tight">AI Opportunity Detector</h1>
+        </div>
+
+        <nav class="hidden lg:flex items-center gap-2 glass rounded-full p-2">
+          <button class="nav-btn active px-4 py-2 rounded-full text-sm border border-transparent" data-section="dashboard">Overview</button>
+          <button class="nav-btn px-4 py-2 rounded-full text-sm border border-transparent text-white/75 hover:text-white" data-section="features">Campus Tools</button>
+          <button class="nav-btn px-4 py-2 rounded-full text-sm border border-transparent text-white/75 hover:text-white" data-section="alerts">Campus Alerts</button>
+          <button class="nav-btn px-4 py-2 rounded-full text-sm border border-transparent text-white/75 hover:text-white" data-section="roadmap">Project Plan</button>
+        </nav>
+
+        <button class="px-5 py-3 rounded-full bg-white text-slate-950 font-semibold hover:scale-105 transition" id="launchBtn">Explore AI Opportunities</button>
+      </div>
+    </header>
+
+    <main class="relative z-10 max-w-7xl mx-auto px-6 pb-20">
+      <section id="dashboard" class="section active pt-10 md:pt-14">
+        <div class="grid lg:grid-cols-2 gap-10 items-start">
+          <div>
+            <div class="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-sm text-white/80 mb-6">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+              Student project discovery
+            </div>
+
+            <h2 class="text-5xl md:text-7xl font-black leading-[0.95] tracking-tight">
+              Discover the next
+              <span class="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-indigo-300 bg-clip-text text-transparent">
+                campus project
+              </span>
+              idea for your semester.
+            </h2>
+
+            <p class="mt-6 text-lg md:text-xl text-white/70 max-w-xl leading-8">
+              Designed for college teams, researchers, and club members to surface real campus problems, validate them from student signals, and build better project plans.
+            </p>
+
+            <div class="mt-8 flex flex-wrap gap-4">
+              <button class="px-6 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-cyan-500 font-semibold glow" id="opportunityBtn">Opportunities found</button>
+              <button class="px-6 py-4 rounded-2xl glass font-semibold text-white/90" id="personalizeBtn">Match My Interests</button>
+            </div>
+
+            <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
+              <div class="glass rounded-2xl p-4 card-hover" id="metricOpportunities">
+                <p class="text-white/50 text-xs">Project Ideas</p>
+                <p class="text-2xl font-bold mt-1" id="oppCount">128</p>
+              </div>
+              <div class="glass rounded-2xl p-4 card-hover">
+                <p class="text-white/50 text-xs">Student Match</p>
+                <p class="text-2xl font-bold mt-1" id="trendAccuracy">92%</p>
+              </div>
+              <div class="glass rounded-2xl p-4 card-hover">
+                <p class="text-white/50 text-xs">Campus Signals</p>
+                <p class="text-2xl font-bold mt-1" id="activeSignals">4.8K</p>
+              </div>
+              <div class="glass rounded-2xl p-4 card-hover">
+                <p class="text-white/50 text-xs">Verified Sources</p>
+                <p class="text-2xl font-bold mt-1">16</p>
+              </div>
+            </div>
+
+            <div class="mt-8 glass rounded-3xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="text-white/50 text-sm">User Profile Match</p>
+                  <h3 class="text-xl font-bold">Personalized for you</h3>
+                </div>
+                <div class="text-sm text-cyan-300 bg-cyan-400/10 px-3 py-2 rounded-full">Live match</div>
+              </div>
+              <div class="grid md:grid-cols-3 gap-3 text-sm" id="profileChips"></div>
+              <p id="matchSummary" class="mt-4 text-sm text-white/60">Click “Match My Interests” to surface the best AI Opportunity Detector ideas for your campus profile.</p>
+            </div>
+          </div>
+
+          <div class="relative">
+            <div class="absolute -inset-6 bg-gradient-to-r from-cyan-500/20 via-fuchsia-500/20 to-indigo-500/20 blur-3xl"></div>
+            <div class="relative glass rounded-[2rem] p-5 md:p-6 glow">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div>
+                  <p class="text-white/50 text-sm">Opportunity Map</p>
+                  <h3 class="text-2xl font-bold">Click points to explore college project ideas</h3>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-emerald-400/15 text-emerald-300 text-sm w-fit">Interactive</div>
+              </div>
+              <div class="grid gap-3 md:grid-cols-2 mt-5">
+                <div class="glass rounded-3xl p-4">
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs text-white/50">Category toggles</p>
+                    <span class="text-xs text-cyan-300">Tap to filter</span>
+                  </div>
+                  <div class="mt-4 flex flex-wrap gap-2" id="categoryToggles"></div>
+                </div>
+                <div class="glass rounded-3xl p-4">
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs text-white/50">Filters</p>
+                    <button id="resetFilters" type="button" class="text-xs text-white/75 hover:text-white">Reset</button>
+                  </div>
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    <button id="verifiedToggle" type="button" class="toggle-chip active">Verified only</button>
+                    <button id="topIdeasToggle" type="button" class="toggle-chip">Top ideas</button>
+                  </div>
+                  <div class="mt-4 text-xs text-white/50">Min confidence <span id="confidenceValue" class="text-cyan-300">80</span>%</div>
+                  <input id="confidenceSlider" type="range" min="50" max="99" step="1" value="80" />
+                </div>
+              </div>
+              <div id="chart"></div>
+              <div class="mt-4 grid md:grid-cols-3 gap-4">
+                <div class="glass rounded-2xl p-4 card-hover" id="selectedNameCard">
+                  <p class="text-xs text-white/50">Selected Idea</p>
+                  <p class="mt-1 font-semibold" id="selectedName">AI skills gap in college projects</p>
+                </div>
+                <div class="glass rounded-2xl p-4 card-hover">
+                  <p class="text-xs text-white/50">Source</p>
+                  <p class="mt-1 font-semibold" id="selectedSource">Campus forums, student surveys</p>
+                </div>
+                <div class="glass rounded-2xl p-4 card-hover">
+                  <p class="text-xs text-white/50">Confidence</p>
+                  <p class="mt-1 font-semibold" id="selectedConfidence">87%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section mt-10">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <p class="text-cyan-300 font-semibold">Core Intelligence</p>
+            <h3 class="text-3xl md:text-4xl font-bold mt-2">Official platform features</h3>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+          <div class="glass rounded-3xl p-6 card-hover">
+            <p class="text-2xl">🔍</p>
+            <h4 class="mt-4 font-bold text-xl">Idea Discovery</h4>
+            <p class="mt-3 text-white/65">Surfaces campus challenges, course gaps, and club project themes from student signals.</p>
+          </div>
+          <div class="glass rounded-3xl p-6 card-hover">
+            <p class="text-2xl">⚡</p>
+            <h4 class="mt-4 font-bold text-xl">Student Match</h4>
+            <p class="mt-3 text-white/65">Matches projects to your interests, skills, and college clubs.</p>
+          </div>
+          <div class="glass rounded-3xl p-6 card-hover">
+            <p class="text-2xl">🧠</p>
+            <h4 class="mt-4 font-bold text-xl">Project Roadmaps</h4>
+            <p class="mt-3 text-white/65">Generates step-by-step development plans for semester projects and hackathons.</p>
+          </div>
+          <div class="glass rounded-3xl p-6 card-hover">
+            <p class="text-2xl">🚀</p>
+            <h4 class="mt-4 font-bold text-xl">Pitch Prep</h4>
+            <p class="mt-3 text-white/65">Helps build club proposals, project reports, and presentation summaries.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="alerts" class="section mt-10">
+        <div class="glass rounded-3xl p-6">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+            <div>
+              <h3 class="text-2xl font-bold">Campus Alerts</h3>
+              <p class="text-white/55 mt-2">Live alerts from student forums, surveys, and club discussions.</p>
+            </div>
+            <div class="text-sm text-emerald-300 bg-emerald-400/10 px-3 py-2 rounded-full w-fit">College signals</div>
+          </div>
+          <div class="mt-5 space-y-4" id="alertsList"></div>
+        </div>
+      </section>
+
+      <section id="roadmap" class="section mt-10">
+        <div class="glass rounded-3xl p-6">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+            <div>
+              <h3 class="text-2xl font-bold">Project Plan</h3>
+              <p class="text-white/55 mt-2">Each selected campus idea becomes a semester-ready plan.</p>
+            </div>
+            <div class="text-sm text-cyan-300 bg-cyan-400/10 px-3 py-2 rounded-full w-fit">Updated live</div>
+          </div>
+          <div class="mt-5 space-y-4" id="roadmapList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Chat widget -->
+  <div id="chatWidget" class="fixed z-50">
+    <div class="glass rounded-2xl p-3 flex items-center justify-between w-80">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center font-black">AI</div>
+        <div class="font-semibold">AI Chat</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="openChatBtn" class="px-3 py-2 rounded-full bg-indigo-600 text-white text-sm">Open</button>
+      </div>
+    </div>
+    <div id="chatPanel" class="hidden mt-2 w-80 glass rounded-2xl p-3 flex flex-col">
+      <div id="chatHistory" class="mb-3"></div>
+      <div class="flex gap-2">
+        <input id="chatInput" class="flex-1 px-3 py-2 rounded-2xl bg-transparent border border-white/10 text-white" placeholder="Type or choose an option..." />
+        <button id="sendChatBtn" class="px-4 py-2 bg-cyan-300 rounded-2xl text-slate-900 font-semibold">Send</button>
+      </div>
+      <div class="mt-3 text-xs text-white/60">Friendly options:</div>
+      <div id="chatOptions" class="mt-2 flex gap-2 flex-wrap"></div>
+      <div class="mt-2 text-xs text-white/50">Select one of the choices below or type your own question.</div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black/70 px-4">
+    <div class="glass w-full max-w-2xl rounded-[2rem] p-6 md:p-8 relative max-h-[90vh] overflow-y-auto scrollbar">
+      <button id="closeModal" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20">✕</button>
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-indigo-500 flex items-center justify-center font-black glow">C</div>
+        <div>
+          <p class="text-white/50 text-sm">Campus Idea Detail</p>
+          <h3 id="modalTitle" class="text-2xl font-bold">Title</h3>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs text-white/50">Detected From</p>
+          <p id="modalSource" class="mt-1 font-semibold">Source</p>
+        </div>
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs text-white/50">Verification</p>
+          <p id="modalVerification" class="mt-1 font-semibold">Verified</p>
+        </div>
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs text-white/50">Idea Score</p>
+          <p id="modalScore" class="mt-1 font-semibold">87</p>
+        </div>
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs text-white/50">Match Type</p>
+          <p id="modalSignal" class="mt-1 font-semibold">Trending</p>
+        </div>
+      </div>
+
+      <div class="mt-5 glass rounded-2xl p-5">
+        <p class="text-xs text-white/50">Why it was detected</p>
+        <p id="modalReason" class="mt-2 text-white/80 leading-7"></p>
+      </div>
+
+      <div class="mt-5 glass rounded-2xl p-5">
+        <p class="text-xs text-white/50">Build path</p>
+        <ul id="modalBuild" class="mt-3 space-y-2 text-white/80"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const userProfile = {
+      interests: ["AI", "Hackathons", "Campus Life"],
+      experience: "First-year to third-year",
+      generation: "Gen Z",
+      focus: "College clubs and student projects"
+    };
+
+    const opportunities = [
+      { name: "AI tutoring assistant for lab courses", x: 18, y: 88, source: "Campus forums, lab feedback", confidence: 89, verified: true, reason: "Students want personalized help for coding labs and assignments.", type: "Research" },
+      { name: "Campus event planning dashboard", x: 35, y: 78, source: "Club coordinators, student surveys", confidence: 84, verified: true, reason: "Clubs need a better way to coordinate events and volunteers.", type: "Student Services" },
+      { name: "Smart study group matcher", x: 52, y: 72, source: "Course chat groups", confidence: 80, verified: true, reason: "Students want to find teammates with matching goals and strengths.", type: "Campus Life" },
+      { name: "Hackathon idea recommender", x: 68, y: 64, source: "Club boards, previous submissions", confidence: 76, verified: true, reason: "Teams look for high-impact project ideas tailored to college challenges.", type: "Hackathon" },
+      { name: "Sustainable campus waste tracker", x: 84, y: 58, source: "Green club surveys", confidence: 72, verified: false, reason: "Students want more visibility into recycling and sustainability progress.", type: "Sustainability" }
+    ];
+
+    const roadmapByType = {
+      "Research": ["1. Collect student survey data.", "2. Build a tutoring support prototype.", "3. Integrate course-specific hints.", "4. Test with lab groups."],
+      "Student Services": ["1. Map club workflows.", "2. Build event planning tools.", "3. Add volunteer coordination.", "4. Launch to campus clubs."],
+      "Campus Life": ["1. Define matching criteria.", "2. Build student discovery flow.", "3. Add schedule sync.", "4. Pilot in study groups."],
+      "Hackathon": ["1. Harvest campus project themes.", "2. Generate idea clusters.", "3. Build scoring criteria.", "4. Share idea packs."],
+      "Sustainability": ["1. Track recycling activity.", "2. Surface waste hotspots.", "3. Recommend campus actions.", "4. Share progress reports."]
+    };
+
+    const profileChips = document.getElementById("profileChips");
+    profileChips.innerHTML = `
+      <div class="px-4 py-3 rounded-2xl bg-white/5 border border-white/10">Interests: ${userProfile.interests.join(", ")}</div>
+      <div class="px-4 py-3 rounded-2xl bg-white/5 border border-white/10">Experience: ${userProfile.experience}</div>
+      <div class="px-4 py-3 rounded-2xl bg-white/5 border border-white/10">Focus: ${userProfile.focus}</div>
+    `;
+
+    const sections = document.querySelectorAll(".section");
+    const navBtns = document.querySelectorAll(".nav-btn");
+    const alertsList = document.getElementById("alertsList");
+    const roadmapList = document.getElementById("roadmapList");
+    const modal = document.getElementById("modal");
+    const categoryToggles = document.getElementById("categoryToggles");
+    const verifiedToggle = document.getElementById("verifiedToggle");
+    const topIdeasToggle = document.getElementById("topIdeasToggle");
+    const resetFiltersBtn = document.getElementById("resetFilters");
+    const confidenceSlider = document.getElementById("confidenceSlider");
+    const confidenceValue = document.getElementById("confidenceValue");
+    const personalizeBtn = document.getElementById("personalizeBtn");
+
+    const categoryList = ["Research", "Student Services", "Campus Life", "Hackathon", "Sustainability"];
+    const matchSummary = document.getElementById("matchSummary");
+    let activeCategories = new Set(categoryList);
+    let showVerifiedOnly = true;
+    let showTopIdeas = false;
+    let minConfidence = Number(confidenceSlider.value);
+    let currentOpportunities = [];
+    let personalizedMode = false;
+
+    function computeInterestCategories(){
+      const categories = new Set();
+      if (userProfile.interests.includes("AI")) categories.add("Research");
+      if (userProfile.interests.includes("Hackathons")) categories.add("Hackathon");
+      if (userProfile.interests.includes("Campus Life")) categories.add("Campus Life");
+      if (userProfile.focus.includes("clubs") || userProfile.focus.includes("project")) categories.add("Student Services");
+      if (userProfile.focus.includes("sustainability")) categories.add("Sustainability");
+      if (!categories.size) categoryList.forEach(cat => categories.add(cat));
+      return categories;
+    }
+
+    function updateMatchSummary(text){
+      if (matchSummary) matchSummary.textContent = text;
+    }
+
+    function setPersonalizeButtonState(active){
+      personalizedMode = active;
+      if (!personalizeBtn) return;
+      personalizeBtn.classList.toggle("personalize-active", active);
+      personalizeBtn.textContent = active ? "Matched" : "Match My Interests";
+    }
+
+    function renderCategoryToggles(){
+      const categories = new Set();
+      if (userProfile.interests.includes("AI")) categories.add("Research");
+      if (userProfile.interests.includes("Hackathons")) categories.add("Hackathon");
+      if (userProfile.interests.includes("Campus Life")) categories.add("Campus Life");
+      if (userProfile.focus.includes("clubs") || userProfile.focus.includes("project")) categories.add("Student Services");
+      if (userProfile.focus.includes("sustainability")) categories.add("Sustainability");
+      if (!categories.size) categoryList.forEach(cat => categories.add(cat));
+      return categories;
+    }
+
+    function renderCategoryToggles(){
+      categoryToggles.innerHTML = categoryList.map(category => `
+        <button type="button" class="toggle-chip ${activeCategories.has(category) ? "active" : ""}" data-category="${category}">${category}</button>
+      `).join("");
+      categoryToggles.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", () => {
+          const category = button.dataset.category;
+          if (activeCategories.has(category)) {
+            activeCategories.delete(category);
+            button.classList.remove("active");
+          } else {
+            activeCategories.add(category);
+            button.classList.add("active");
+          }
+          updateGraph();
+        });
+      });
+    }
+
+    function applyFilters(list){
+      return list.filter(op =>
+        activeCategories.has(op.type) &&
+        op.confidence >= minConfidence &&
+        (!showVerifiedOnly || op.verified)
+      );
+    }
+
+    function updateGraph(){
+      let filtered = applyFilters(currentOpportunities);
+      if (showTopIdeas) filtered = filtered.slice(0, 4);
+      if (!filtered.length) {
+        alertsList.innerHTML = `<div class="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/80">No ideas match the current filters. Try widening the categories or lowering the confidence threshold.</div>`;
+        drawChart(currentOpportunities);
+        if (currentOpportunities && currentOpportunities.length) {
+          updateSelection(currentOpportunities[0]);
+        } else {
+          document.getElementById("selectedName").textContent = "-";
+          document.getElementById("selectedSource").textContent = "-";
+          document.getElementById("selectedConfidence").textContent = "-";
+        }
+        return;
+      }
+      drawChart(filtered);
+      renderAlerts(filtered);
+      updateSelection(filtered[0]);
+    }
+
+    function updateFilterUi(){
+      verifiedToggle.classList.toggle("active", showVerifiedOnly);
+      topIdeasToggle.classList.toggle("active", showTopIdeas);
+      confidenceValue.textContent = minConfidence;
+    }
+
+    function resetFilters(){
+      setPersonalizeButtonState(false);
+      activeCategories = new Set(categoryList);
+      showVerifiedOnly = true;
+      showTopIdeas = false;
+      minConfidence = 80;
+      confidenceSlider.value = minConfidence;
+      updateFilterUi();
+      renderCategoryToggles();
+      updateGraph();
+      updateMatchSummary("Filters reset. Click “Match My Interests” to activate your personalized AI match.");
+    }
+
+    function showSection(id){
+      sections.forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      navBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.section === id));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if(id === "alerts") renderAlerts(opportunities);
+      if(id === "roadmap") renderRoadmap(opportunities[0]);
+    }
+
+    function renderAlerts(list){
+      alertsList.innerHTML = list.map((item, index) => `
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between p-4 rounded-2xl bg-white/5 border border-white/10 card-hover" data-index="${index}">
+          <div>
+            <p class="font-semibold text-lg">${item.name}</p>
+            <p class="text-sm text-white/55">Source: ${item.source}</p>
+            <p class="text-sm text-white/45 mt-1">Why detected: ${item.reason}</p>
+          </div>
+          <div class="mt-3 md:mt-0 text-left md:text-right">
+            <span class="text-emerald-300 font-bold text-lg">${item.confidence}% confidence</span>
+            <p class="text-xs text-white/45 mt-1">${item.verified ? "Verified" : "Needs review"}</p>
+          </div>
+        </div>
+      `).join("");
+
+      alertsList.querySelectorAll("[data-index]").forEach(el => {
+        el.addEventListener("click", () => openModal(list[Number(el.dataset.index)]));
+      });
+    }
+
+    function renderRoadmap(selected){
+      const items = roadmapByType[selected.type] || ["1. Analyze signals.", "2. Build feature flow.", "3. Add verification.", "4. Launch prototype."];
+      roadmapList.innerHTML = items.map(step => `
+        <div class="p-4 rounded-2xl bg-white/5 border border-white/10 card-hover">
+          <p class="font-semibold text-white/90">${step}</p>
+        </div>
+      `).join("");
+    }
+
+    function openModal(op){
+      document.getElementById("modalTitle").textContent = op.name;
+      document.getElementById("modalSource").textContent = op.source;
+      document.getElementById("modalVerification").textContent = op.verified ? "Verified" : "Review required";
+      document.getElementById("modalScore").textContent = op.confidence + " / 100";
+      document.getElementById("modalSignal").textContent = op.type;
+      document.getElementById("modalReason").textContent = op.reason;
+      document.getElementById("modalBuild").innerHTML = (roadmapByType[op.type] || []).map(s => `<li>${s}</li>`).join("");
+      modal.classList.add("show");
+    }
+
+    function closeModal(){ modal.classList.remove("show"); }
+
+    function updateSelection(op){
+      document.getElementById("selectedName").textContent = op.name;
+      document.getElementById("selectedSource").textContent = op.source;
+      document.getElementById("selectedConfidence").textContent = op.confidence + "%";
+      document.getElementById("oppCount").textContent = opportunities.length * 25 + Math.floor(op.confidence);
+      document.getElementById("trendAccuracy").textContent = Math.min(99, op.confidence + 8) + "%";
+      document.getElementById("activeSignals").textContent = (op.x * 45) + "K";
+      renderRoadmap(op);
+    }
+
+    function drawChart(points){
+      const trace = {
+        x: points.map(p => p.x),
+        y: points.map(p => p.y),
+        mode: "markers+text",
+        text: points.map(p => p.confidence + "%"),
+        textposition: "top center",
+        customdata: points.map(p => [p.name, p.source, p.confidence, p.type, p.reason, p.verified]),
+        hovertemplate: "<b>%{customdata[0]}</b><br>Source: %{customdata[1]}<br>Confidence: %{customdata[2]}%<br>Type: %{customdata[3]}<extra></extra>",
+        marker: {
+          size: points.map(p => 18 + Math.round(p.confidence / 8)),
+          color: points.map(p => p.verified ? "#22c55e" : "#f59e0b"),
+          opacity: 0.92,
+          line: { width: 2, color: "white" }
+        }
+      };
+
+      const layout = {
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        margin: { l: 40, r: 20, t: 20, b: 45 },
+        xaxis: {
+          title: "Campus reach",
+          gridcolor: "rgba(255,255,255,0.08)",
+          zeroline: false,
+          color: "rgba(255,255,255,0.7)"
+        },
+        yaxis: {
+          title: "Student interest",
+          gridcolor: "rgba(255,255,255,0.08)",
+          zeroline: false,
+          color: "rgba(255,255,255,0.7)"
+        },
+        showlegend: false,
+        font: { family: "Inter, sans-serif", color: "#fff" }
+      };
+
+      Plotly.newPlot("chart", [trace], layout, { responsive: true, displayModeBar: false });
+
+      const chart = document.getElementById("chart");
+      chart.on("plotly_click", function(eventData){
+        const idx = eventData.points[0].pointIndex;
+        const op = points[idx];
+        updateSelection(op);
+        openModal(op);
+      });
+    }
+
+    /* Chatbot client-side logic */
+    (function setupChat(){
+      const openChatBtn = document.getElementById('openChatBtn');
+      const chatPanel = document.getElementById('chatPanel');
+      const chatHistory = document.getElementById('chatHistory');
+      const chatInput = document.getElementById('chatInput');
+      const sendChatBtn = document.getElementById('sendChatBtn');
+      const chatOptions = document.getElementById('chatOptions');
+
+      if (!openChatBtn) return;
+
+      openChatBtn.addEventListener('click', () => {
+        chatPanel.classList.toggle('hidden');
+        if (!chatPanel.classList.contains('hidden')) chatInput.focus();
+      });
+
+      function appendChatMessage(text, from='bot'){
+        const wrapper = document.createElement('div');
+        wrapper.className = 'px-3 py-2 mb-2 rounded-xl max-w-full '+(from==='user' ? 'chat-msg-user' : 'chat-msg-bot');
+        wrapper.textContent = text;
+        chatHistory.appendChild(wrapper);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+
+      // Quick-reply options for faster interaction
+      const quickReplies = [
+        { label: 'Suggest campus projects', prompt: 'Suggest top campus project ideas for my profile.' },
+        { label: 'Match my interests', prompt: 'Match my interests' },
+        { label: 'Show a roadmap', prompt: 'Show a roadmap for the best idea' },
+        { label: 'Explain an idea gently', prompt: 'Explain the best idea in a simple way.' },
+        { label: 'Clear chat', prompt: '__clear__' }
+      ];
+
+      function renderChatOptions(){
+        if (!chatOptions) return;
+        chatOptions.innerHTML = '';
+        quickReplies.forEach(q => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'px-3 py-2 rounded-full bg-white/10 text-sm text-white/90 border border-white/10 hover:bg-white/20 transition';
+          b.textContent = q.label;
+          b.addEventListener('click', () => {
+            if (q.prompt === '__clear__') {
+              chatHistory.innerHTML = '';
+              appendChatMessage('Okay, the chat is cleared. I am ready when you are!', 'bot');
+              return;
+            }
+            appendChatMessage(q.prompt, 'user');
+            appendChatMessage('Sure — I am thinking about the best answer for you...', 'bot');
+            setTimeout(() => {
+              const last = chatHistory.lastChild;
+              if (last) last.textContent = generateBotReply(q.prompt);
+              chatHistory.scrollTop = chatHistory.scrollHeight;
+            }, 700 + Math.random()*600);
+          });
+          chatOptions.appendChild(b);
+        });
+      }
+
+      function greetChat(){
+        appendChatMessage('Hi there! I am a gentle AI helper for campus projects. Please choose one of the options below, or ask me directly.', 'bot');
+        renderChatOptions();
+      }
+
+      if (chatOptions) {
+        greetChat();
+      }
+
+      function generateBotReply(text){
+        const q = (text||'').toLowerCase();
+        if (q.includes('ai') && q.includes('tutor')) return 'A gentle AI tutoring assistant is great for lab classes — I suggest starting with quick hints, step-by-step checks, and helpful examples.';
+        if (q.includes('suggest') || q.includes('project')) {
+          const ideas = currentOpportunities && currentOpportunities.length ? currentOpportunities.slice(0, 3).map(op => `"${op.name}"`).join(', ') : 'AI tutoring assistant, hackathon idea recommender, and smart study group matcher';
+          return `Here are a few friendly campus ideas: ${ideas}. Pick one to learn more.`;
+        }
+        if (q.includes('match my interests')) return 'I am matching your profile now — I recommend ideas in Research, Hackathon, and Campus Life categories for your campus interests.';
+        if (q.includes('roadmap')) {
+          const best = currentOpportunities && currentOpportunities[0];
+          return best ? `A gentle roadmap for "${best.name}": ${roadmapByType[best.type].join(' ')}` : 'I am happy to show a roadmap once an idea is selected.';
+        }
+        if (q.includes('explain') || q.includes('simple')) return 'Sure, I can explain it gently. I will summarize the idea in simple steps and why it matters to campus life.';
+        if (q.includes('study') || q.includes('group')) return 'The study group matcher pairs students by schedule and goals, helping classmates find the best teammates quickly.';
+        if (q.includes('sustain') || q.includes('waste')) return 'A campus sustainability tracker helps students see recycling habits, schedule collections, and share progress reports.';
+        const best = (currentOpportunities && currentOpportunities.find(op => activeCategories.has(op.type) && op.confidence >= minConfidence)) || (currentOpportunities && currentOpportunities[0]);
+        if (best) return `Consider "${best.name}" — ${best.reason}`;
+        return 'Please choose one of the options below or type a question so I can help you better.';
+      }
+
+      function sendChatMessage(){
+        const text = chatInput.value.trim();
+        if (!text) return;
+        appendChatMessage(text, 'user');
+        chatInput.value = '';
+        appendChatMessage('Thinking...', 'bot');
+        setTimeout(()=>{
+          // replace last bot message
+          const last = chatHistory.lastChild;
+          if (last) last.textContent = generateBotReply(text);
+          chatHistory.scrollTop = chatHistory.scrollHeight;
+        }, 700 + Math.random()*600);
+      }
+
+      sendChatBtn.addEventListener('click', sendChatMessage);
+      chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChatMessage(); });
+    })();
+
+    function personalizeAndFilter(){
+      currentOpportunities = opportunities
+        .map(op => {
+          let match = 0;
+          if (op.type === "Research" && userProfile.interests.includes("AI")) match += 18;
+          if (op.type === "Hackathon" && userProfile.interests.includes("Hackathons")) match += 18;
+          if (op.type === "Campus Life" && userProfile.interests.includes("Campus Life")) match += 16;
+          if (op.verified) match += 10;
+          return { ...op, confidence: Math.min(99, op.confidence + match) };
+        })
+        .sort((a, b) => b.confidence - a.confidence);
+
+      activeCategories = computeInterestCategories();
+      showVerifiedOnly = true;
+      showTopIdeas = false;
+      minConfidence = 75;
+      confidenceSlider.value = minConfidence;
+
+      renderCategoryToggles();
+      updateFilterUi();
+      updateGraph();
+
+      const selectedCategories = Array.from(activeCategories).join(", ");
+      updateMatchSummary(`AI Match Engine is prioritizing ${selectedCategories} ideas for your profile.`);
+    }
+
+    navBtns.forEach(btn => btn.addEventListener("click", () => showSection(btn.dataset.section)));
+    document.getElementById("opportunityBtn").addEventListener("click", () => showSection("alerts"));
+    document.getElementById("personalizeBtn").addEventListener("click", () => {
+      if (personalizedMode) {
+        resetFilters();
+      } else {
+        personalizeAndFilter();
+      }
+      showSection("dashboard");
+    });
+    verifiedToggle.addEventListener("click", () => {
+      showVerifiedOnly = !showVerifiedOnly;
+      updateFilterUi();
+      updateGraph();
+    });
+    topIdeasToggle.addEventListener("click", () => {
+      showTopIdeas = !showTopIdeas;
+      updateFilterUi();
+      updateGraph();
+    });
+    resetFiltersBtn.addEventListener("click", resetFilters);
+    confidenceSlider.addEventListener("input", () => {
+      minConfidence = Number(confidenceSlider.value);
+      updateFilterUi();
+      updateGraph();
+    });
+    document.getElementById("launchBtn").addEventListener("click", () => showSection("dashboard"));
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+    modal.addEventListener("click", e => { if(e.target === modal) closeModal(); });
+
+    resetFilters();
+  </script>
+</body>
+</html>
